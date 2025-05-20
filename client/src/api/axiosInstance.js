@@ -5,8 +5,7 @@ const baseURL = import.meta.env.PROD
   : "http://localhost:5000";         // Development URL
 
 const axiosInstance = axios.create({
-  baseURL,
-  withCredentials: true
+  baseURL: "http://localhost:5000",
 });
 
 axiosInstance.interceptors.request.use(
