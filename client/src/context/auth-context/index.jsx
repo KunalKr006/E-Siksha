@@ -3,6 +3,7 @@ import { initialSignInFormData, initialSignUpFormData } from "@/config";
 import { checkAuthService, loginService, registerService } from "@/services";
 import { createContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export const AuthContext = createContext(null);
 
@@ -19,38 +20,66 @@ export default function AuthProvider({ children }) {
 
   async function handleRegisterUser(event, onSuccess) {
     event.preventDefault();
-    const data = await registerService(signUpFormData);
-    if (data.success) {
-      setSignUpFormData(initialSignUpFormData);
-      // Call the callback if provided to switch tabs or show a message
-      if (typeof onSuccess === 'function') {
-        onSuccess();
+    try {
+      const data = await registerService(signUpFormData);
+      if (data.success) {
+        toast.success("Registration successful! Please login.");
+        setSignUpFormData(initialSignUpFormData);
+        if (typeof onSuccess === 'function') {
+          onSuccess();
+        }
+      } else {
+        toast.error(data.message || "Registration failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.response?.status === 409) {
+        toast.error("Email already exists. Please use a different email.");
+      } else {
+        toast.error("Registration failed. Please try again.");
       }
     }
   }
 
   async function handleLoginUser(event) {
     event.preventDefault();
-    const data = await loginService(signInFormData);
-    console.log(data, "datadatadatadatadata");
-
-    if (data.success) {
-      sessionStorage.setItem(
-        "accessToken",
-        JSON.stringify(data.data.accessToken)
-      );
-      setAuth({
-        authenticate: true,
-        user: data.data.user,
-      });
-      
-      // Navigate to appropriate page based on user role
-      if(data.data.user.role === "instructor") {
-        navigate("/instructor");
+    try {
+      const data = await loginService(signInFormData);
+      if (data.success) {
+        sessionStorage.setItem(
+          "accessToken",
+          JSON.stringify(data.data.accessToken)
+        );
+        setAuth({
+          authenticate: true,
+          user: data.data.user,
+        });
+        toast.success("Login successful!");
+        
+        // Navigate to appropriate page based on user role
+        if(data.data.user.role === "instructor") {
+          navigate("/instructor");
+        } else {
+          navigate("/home");
+        }
       } else {
-        navigate("/home");
+        toast.error(data.message || "Invalid credentials. Please try again.");
+        setAuth({
+          authenticate: false,
+          user: null,
+        });
       }
-    } else {
+    } catch (error) {
+      console.error("Login error:", error);
+      if (error.response?.status === 401) {
+        toast.error("Invalid email or password. Please try again.");
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Login failed. Please try again.");
+      }
       setAuth({
         authenticate: false,
         user: null,
