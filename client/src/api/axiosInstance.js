@@ -4,7 +4,6 @@ const axiosInstance = axios.create({
   baseURL: "https://e-siksha.onrender.com",
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
     'Accept': 'application/json'
   }
 });
@@ -15,6 +14,11 @@ axiosInstance.interceptors.request.use(
 
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    // Don't set Content-Type for FormData, let the browser set it with boundary
+    if (!(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json';
     }
 
     return config;
