@@ -17,7 +17,7 @@ import {
   checkCoursePurchaseInfoService,
   fetchStudentViewCourseListService,
 } from "@/services";
-import { ArrowUpDownIcon } from "lucide-react";
+import { ArrowUpDownIcon, Menu, X } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -38,6 +38,7 @@ function createSearchParamsHelper(filterParams) {
 function StudentViewCoursesPage() {
   const [sort, setSort] = useState("price-lowtohigh");
   const [filters, setFilters] = useState({});
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const {
     studentViewCoursesList,
@@ -127,16 +128,57 @@ function StudentViewCoursesPage() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">All Courses</h1>
-      <div className="flex flex-col md:flex-row gap-4">
-        <aside className="w-full md:w-64 space-y-4">
-          <div>
+      <div className="flex items-center gap-4 mb-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        >
+          {isSidebarOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+        </Button>
+        <h1 className="text-3xl font-bold">All Courses</h1>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 relative">
+        {/* Mobile Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <aside 
+          className={`
+            fixed md:static top-0 left-0 h-full w-[280px] bg-background z-50 
+            transform transition-transform duration-300 ease-in-out
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            md:w-64 space-y-4 border-r p-4 md:p-0
+          `}
+        >
+          <div className="flex justify-between items-center md:hidden mb-4">
+            <h2 className="font-bold text-lg">Filters</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="overflow-y-auto h-[calc(100vh-80px)] md:h-auto">
             {Object.keys(filterOptions).map((ketItem) => (
-              <div className="p-4 border-b">
+              <div key={ketItem} className="p-4 border-b">
                 <h3 className="font-bold mb-3">{ketItem.toUpperCase()}</h3>
                 <div className="grid gap-2 mt-2">
                   {filterOptions[ketItem].map((option) => (
-                    <Label className="flex font-medium items-center gap-3">
+                    <Label key={option.id} className="flex font-medium items-center gap-3">
                       <Checkbox
                         checked={
                           filters &&
@@ -156,6 +198,7 @@ function StudentViewCoursesPage() {
             ))}
           </div>
         </aside>
+
         <main className="flex-1">
           <div className="flex justify-end items-center mb-4 gap-5">
             <DropdownMenu>
@@ -189,23 +232,25 @@ function StudentViewCoursesPage() {
               {studentViewCoursesList.length} Results
             </span>
           </div>
+
           <div className="space-y-4">
             {studentViewCoursesList && studentViewCoursesList.length > 0 ? (
               studentViewCoursesList.map((courseItem) => (
                 <Card
                   onClick={() => handleCourseNavigate(courseItem?._id)}
-                  className="cursor-pointer"
+                  className="cursor-pointer hover:shadow-md transition-shadow"
                   key={courseItem?._id}
                 >
-                  <CardContent className="flex gap-4 p-4">
-                    <div className="w-48 h-32 flex-shrink-0">
+                  <CardContent className="flex flex-col sm:flex-row gap-4 p-4">
+                    <div className="w-full sm:w-48 h-32 flex-shrink-0">
                       <img
                         src={courseItem?.image}
-                        className="w-ful h-full object-cover"
+                        alt={courseItem?.title}
+                        className="w-full h-full object-cover rounded-md"
                       />
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="text-xl mb-2">
+                      <CardTitle className="text-xl mb-2 line-clamp-2">
                         {courseItem?.title}
                       </CardTitle>
                       <p className="text-sm text-gray-600 mb-1">
@@ -222,7 +267,7 @@ function StudentViewCoursesPage() {
                         } - ${courseItem?.level.toUpperCase()} Level`}
                       </p>
                       <p className="font-bold text-lg">
-                      ₹{courseItem?.pricing}
+                        ₹{courseItem?.pricing}
                       </p>
                     </div>
                   </CardContent>

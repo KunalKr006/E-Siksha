@@ -164,28 +164,36 @@ function StudentViewCourseDetailsPage() {
       : -1;
 
   return (
-    <div className="mx-auto p-4">
-      <div className="bg-background border rounded-lg p-8 shadow-sm">
-        <div className="flex items-center gap-4 mb-4">
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
+      {/* Course Header */}
+      <div className="bg-background border rounded-lg p-4 md:p-8 shadow-sm mb-6">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
           <Button 
             variant="ghost" 
-            onClick={() => navigate(-1)} 
+            onClick={() => navigate(-1)}
+            className="self-start md:self-auto"
           >
             ← Back
           </Button>
-          <h1 className="text-3xl font-bold">
-          {studentViewCourseDetails?.title}
-        </h1>
+          <h1 className="text-2xl md:text-3xl font-bold break-words">
+            {studentViewCourseDetails?.title}
+          </h1>
         </div>
-        <p className="text-xl mb-4 text-muted-foreground">{studentViewCourseDetails?.subtitle}</p>
-        <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
-          <span>Created By <span className="font-semibold">{studentViewCourseDetails?.instructorName}</span></span>
-          <span>Created On {studentViewCourseDetails?.date?.split("T")[0]}</span>
+        <p className="text-lg md:text-xl mb-4 text-muted-foreground break-words">
+          {studentViewCourseDetails?.subtitle}
+        </p>
+        <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+          <span className="flex items-center">
+            Created By <span className="font-semibold ml-1">{studentViewCourseDetails?.instructorName}</span>
+          </span>
+          <span className="flex items-center">
+            Created On {studentViewCourseDetails?.date?.split("T")[0]}
+          </span>
           <span className="flex items-center">
             <Globe className="mr-1 h-4 w-4" />
             {studentViewCourseDetails?.primaryLanguage}
           </span>
-          <span>
+          <span className="flex items-center">
             {studentViewCourseDetails?.students?.length || 0}{" "}
             {studentViewCourseDetails?.students?.length <= 1
               ? "Student"
@@ -193,66 +201,78 @@ function StudentViewCourseDetailsPage() {
           </span>
         </div>
       </div>
-      <div className="flex flex-col md:flex-row gap-8 mt-8">
-        <main className="flex-grow">
-          <Card className="mb-8">
+
+      {/* Main Content and Sidebar */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Main Content */}
+        <main className="flex-grow lg:max-w-[calc(100%-520px)]">
+          <Card className="mb-6">
             <CardHeader>
               <CardTitle>What you'll learn</CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {studentViewCourseDetails?.objectives
                   .split(",")
                   .map((objective, index) => (
                     <li key={index} className="flex items-start">
-                      <CheckCircle className="mr-2 h-5 w-5 text-green-500 flex-shrink-0" />
-                      <span>{objective}</span>
+                      <CheckCircle className="mr-2 h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm md:text-base">{objective}</span>
                     </li>
                   ))}
               </ul>
             </CardContent>
           </Card>
-          <Card className="mb-8">
+
+          <Card className="mb-6">
             <CardHeader>
               <CardTitle>Course Description</CardTitle>
             </CardHeader>
-            <CardContent>{studentViewCourseDetails?.description}</CardContent>
+            <CardContent className="text-sm md:text-base whitespace-pre-wrap">
+              {studentViewCourseDetails?.description}
+            </CardContent>
           </Card>
-          <Card className="mb-8">
+
+          <Card className="mb-6">
             <CardHeader>
               <CardTitle>Course Curriculum</CardTitle>
             </CardHeader>
             <CardContent>
-              {studentViewCourseDetails?.curriculum?.map(
-                (curriculumItem, index) => (
-                  <li
-                    className={`${
-                      curriculumItem?.freePreview
-                        ? "cursor-pointer"
-                        : "cursor-not-allowed"
-                    } flex items-center mb-4`}
-                    onClick={
-                      curriculumItem?.freePreview
-                        ? () => handleSetFreePreview(curriculumItem)
-                        : null
-                    }
-                  >
-                    {curriculumItem?.freePreview ? (
-                      <PlayCircle className="mr-2 h-4 w-4" />
-                    ) : (
-                      <Lock className="mr-2 h-4 w-4" />
-                    )}
-                    <span>{curriculumItem?.title}</span>
-                  </li>
-                )
-              )}
+              <ul className="space-y-3">
+                {studentViewCourseDetails?.curriculum?.map(
+                  (curriculumItem, index) => (
+                    <li
+                      key={index}
+                      className={`${
+                        curriculumItem?.freePreview
+                          ? "cursor-pointer hover:bg-muted/50"
+                          : "cursor-not-allowed opacity-75"
+                      } flex items-center p-2 rounded-md transition-colors`}
+                      onClick={
+                        curriculumItem?.freePreview
+                          ? () => handleSetFreePreview(curriculumItem)
+                          : null
+                      }
+                    >
+                      {curriculumItem?.freePreview ? (
+                        <PlayCircle className="mr-2 h-4 w-4 text-primary" />
+                      ) : (
+                        <Lock className="mr-2 h-4 w-4 text-muted-foreground" />
+                      )}
+                      <span className="text-sm md:text-base">{curriculumItem?.title}</span>
+                    </li>
+                  )
+                )}
+              </ul>
             </CardContent>
           </Card>
         </main>
-        <aside className="w-full md:w-[500px]">
+
+        {/* Sidebar */}
+        <aside className="w-full lg:w-[500px]">
           <Card className="sticky top-4">
-            <CardContent className="p-6">
-              <div className="aspect-video mb-4 rounded-lg flex items-center justify-center">
+            <CardContent className="p-4 md:p-6">
+              <div className="aspect-video mb-4 rounded-lg overflow-hidden">
                 <VideoPlayer
                   url={
                     getIndexOfFreePreviewUrl !== -1
@@ -261,13 +281,13 @@ function StudentViewCourseDetailsPage() {
                         ].videoUrl
                       : ""
                   }
-                  width="450px"
-                  height="200px"
+                  width="100%"
+                  height="100%"
                 />
               </div>
               <div className="mb-4">
-                <span className="text-3xl font-bold">
-                ₹{studentViewCourseDetails?.pricing}
+                <span className="text-2xl md:text-3xl font-bold">
+                  ₹{studentViewCourseDetails?.pricing}
                 </span>
               </div>
               <Button onClick={handleCreatePayment} className="w-full">
@@ -277,6 +297,8 @@ function StudentViewCourseDetailsPage() {
           </Card>
         </aside>
       </div>
+
+      {/* Preview Dialog */}
       <Dialog
         open={showFreePreviewDialog}
         onOpenChange={() => {
@@ -284,30 +306,31 @@ function StudentViewCourseDetailsPage() {
           setDisplayCurrentVideoFreePreview(null);
         }}
       >
-        <DialogContent className="w-[800px]">
+        <DialogContent className="w-[95vw] max-w-[800px] p-4 md:p-6">
           <DialogHeader>
             <DialogTitle>Course Preview</DialogTitle>
           </DialogHeader>
-          <div className="aspect-video rounded-lg flex items-center justify-center">
+          <div className="aspect-video rounded-lg overflow-hidden mb-4">
             <VideoPlayer
               url={displayCurrentVideoFreePreview}
-              width="450px"
-              height="200px"
+              width="100%"
+              height="100%"
             />
           </div>
           <div className="flex flex-col gap-2">
             {studentViewCourseDetails?.curriculum
               ?.filter((item) => item.freePreview)
-              .map((filteredItem) => (
+              .map((filteredItem, index) => (
                 <p
+                  key={index}
                   onClick={() => handleSetFreePreview(filteredItem)}
-                  className="cursor-pointer text-[16px] font-medium"
+                  className="cursor-pointer text-sm md:text-base font-medium p-2 hover:bg-muted/50 rounded-md transition-colors"
                 >
                   {filteredItem?.title}
                 </p>
               ))}
           </div>
-          <DialogFooter className="sm:justify-start">
+          <DialogFooter className="sm:justify-start mt-4">
             <DialogClose asChild>
               <Button type="button" variant="secondary">
                 Close
