@@ -2,6 +2,11 @@ import axios from "axios";
 
 const axiosInstance = axios.create({
   baseURL: "https://e-siksha.onrender.com",
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }
 });
 
 axiosInstance.interceptors.request.use(
