@@ -1,5 +1,7 @@
 const express = require("express");
 const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
 const {
   uploadMediaToCloudinary,
   deleteMediaFromCloudinary,
@@ -7,19 +9,66 @@ const {
 
 const router = express.Router();
 
-const upload = multer({ dest: "uploads/" });
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, "../../uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const upload = multer({ 
+  dest: uploadsDir,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+  }
+});
 
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "No file uploaded" 
+      });
+    }
+
     const result = await uploadMediaToCloudinary(req.file.path);
+    
+    // Clean up the temporary file
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error("Error deleting temporary file:", err);
+    });
+
     res.status(200).json({
       success: true,
       data: result,
     });
-  } catch (e) {
-    console.log(e);
+  } catch (error) {
+    console.error("Upload error:", error);
+    
+    // Clean up the temporary file if it exists
+    if (req.file?.path) {
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error("Error deleting temporary file:", err);
+      });
+    }
 
-    res.status(500).json({ success: false, message: "Error uploading file" });
+    // Send appropriate error message
+    if (error.message === "Error uploading to cloudinary") {
+      res.status(500).json({ 
+        success: false, 
+        message: "Error uploading to cloud storage. Please try again." 
+      });
+    } else if (error.code === "LIMIT_FILE_SIZE") {
+      res.status(400).json({ 
+        success: false, 
+        message: "File size too large. Maximum size is 50MB." 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        message: "Error uploading file. Please try again." 
+      });
+    }
   }
 });
 
