@@ -1,8 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "https://e-siksha.onrender.com",
-  withCredentials: true
+  baseURL: "http://localhost:5000",
 });
 
 axiosInstance.interceptors.request.use(
