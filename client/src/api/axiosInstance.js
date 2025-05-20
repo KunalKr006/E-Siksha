@@ -1,12 +1,7 @@
 import axios from "axios";
 
-const baseURL = import.meta.env.PROD 
-  ? "https://e-siksha.onrender.com"  // Production URL
-  : "http://localhost:5000";         // Development URL
-
 const axiosInstance = axios.create({
-  baseURL,
-  withCredentials: true
+  baseURL: "https://e-siksha.onrender.com",
 });
 
 axiosInstance.interceptors.request.use(
