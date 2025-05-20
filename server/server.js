@@ -16,9 +16,14 @@ const MONGO_URI = process.env.MONGO_URI;
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://e-siksha-co.onrender.com"
+    ],
     methods: ["GET", "POST", "DELETE", "PUT"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
   })
 );
 
