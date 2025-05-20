@@ -70,8 +70,9 @@ function StudentViewCourseDetailsPage() {
   }
 
   function handleSetFreePreview(getCurrentVideoInfo) {
-    console.log(getCurrentVideoInfo);
-    setDisplayCurrentVideoFreePreview(getCurrentVideoInfo?.videoUrl);
+    if (getCurrentVideoInfo?.freePreview) {
+      setDisplayCurrentVideoFreePreview(getCurrentVideoInfo?.videoUrl);
+    }
   }
 
   async function handleCreatePayment() {
@@ -243,22 +244,12 @@ function StudentViewCourseDetailsPage() {
                   (curriculumItem, index) => (
                     <li
                       key={index}
-                      className={`${
-                        curriculumItem?.freePreview
-                          ? "cursor-pointer hover:bg-muted/50"
-                          : "cursor-not-allowed opacity-75"
-                      } flex items-center p-2 rounded-md transition-colors`}
-                      onClick={
-                        curriculumItem?.freePreview
-                          ? () => handleSetFreePreview(curriculumItem)
-                          : null
-                      }
+                      className="flex items-center p-2 rounded-md transition-colors cursor-not-allowed opacity-75"
+                      onClick={() => {
+                        alert("Please purchase the course to access this lecture");
+                      }}
                     >
-                      {curriculumItem?.freePreview ? (
-                        <PlayCircle className="mr-2 h-4 w-4 text-primary" />
-                      ) : (
-                        <Lock className="mr-2 h-4 w-4 text-muted-foreground" />
-                      )}
+                      <Lock className="mr-2 h-4 w-4 text-muted-foreground" />
                       <span className="text-sm md:text-base">{curriculumItem?.title}</span>
                     </li>
                   )
@@ -273,16 +264,10 @@ function StudentViewCourseDetailsPage() {
           <Card className="sticky top-4">
             <CardContent className="p-4 md:p-6">
               <div className="aspect-video mb-4 rounded-lg overflow-hidden">
-                <VideoPlayer
-                  url={
-                    getIndexOfFreePreviewUrl !== -1
-                      ? studentViewCourseDetails?.curriculum[
-                          getIndexOfFreePreviewUrl
-                        ].videoUrl
-                      : ""
-                  }
-                  width="100%"
-                  height="100%"
+                <img
+                  src={studentViewCourseDetails?.image}
+                  alt={studentViewCourseDetails?.title}
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="mb-4">
@@ -309,6 +294,9 @@ function StudentViewCourseDetailsPage() {
         <DialogContent className="w-[95vw] max-w-[800px] p-4 md:p-6">
           <DialogHeader>
             <DialogTitle>Course Preview</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              This is a preview lecture. Purchase the course to access all content.
+            </p>
           </DialogHeader>
           <div className="aspect-video rounded-lg overflow-hidden mb-4">
             <VideoPlayer
@@ -330,7 +318,10 @@ function StudentViewCourseDetailsPage() {
                 </p>
               ))}
           </div>
-          <DialogFooter className="sm:justify-start mt-4">
+          <DialogFooter className="sm:justify-between mt-4">
+            <Button onClick={handleCreatePayment} className="flex-1">
+              Buy Full Course
+            </Button>
             <DialogClose asChild>
               <Button type="button" variant="secondary">
                 Close
