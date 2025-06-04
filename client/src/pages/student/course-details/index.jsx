@@ -80,9 +80,9 @@ function StudentViewCourseDetailsPage() {
       userId: auth?.user?._id,
       userName: auth?.user?.userName,
       userEmail: auth?.user?.userEmail,
-      orderStatus: "pending",
-      paymentMethod: "razorpay",
-      paymentStatus: "initiated",
+      orderStatus: "confirmed",
+      paymentMethod: "free",
+      paymentStatus: "paid",
       orderDate: new Date(),
       instructorId: studentViewCourseDetails?.instructorId,
       instructorName: studentViewCourseDetails?.instructorName,
@@ -94,45 +94,11 @@ function StudentViewCourseDetailsPage() {
 
     try {
       const response = await createPaymentService(paymentPayload);
-
       if (response.success) {
-        const options = {
-          key: response.data.key,
-          amount: response.data.amount,
-          currency: response.data.currency,
-          name: "E-Siksha",
-          description: studentViewCourseDetails?.title,
-          order_id: response.data.razorpayOrderId,
-          handler: async function (response) {
-            try {
-              const captureResponse = await axiosInstance.post('/student/order/capture', {
-                orderId: response.data.orderId,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature
-              });
-              
-              if (captureResponse.data.success) {
-                navigate('/student-courses');
-              }
-            } catch (error) {
-              console.error("Error capturing payment:", error);
-            }
-          },
-          prefill: {
-            name: auth?.user?.userName,
-            email: auth?.user?.userEmail,
-          },
-          theme: {
-            color: "#0F172A",
-          },
-        };
-
-        const razorpay = new window.Razorpay(options);
-        razorpay.open();
+        navigate('/student-courses');
       }
     } catch (error) {
-      console.error("Error in payment:", error);
+      console.error("Error in course purchase:", error);
     }
   }
 
