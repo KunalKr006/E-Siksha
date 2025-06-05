@@ -93,6 +93,7 @@ function StudentHomePage() {
               <div
                 onClick={() => handleCourseNavigate(courseItem?._id)}
                 className="border rounded-lg overflow-hidden shadow cursor-pointer"
+                key={courseItem?._id}
               >
                 <img
                   src={courseItem?.image}

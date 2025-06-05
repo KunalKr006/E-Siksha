@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VideoPlayer from "@/components/video-player";
+import Chatbot from "@/components/chatbot";
 import { AuthContext } from "@/context/auth-context";
 import { StudentContext } from "@/context/student-context";
 import {
@@ -120,7 +121,7 @@ function StudentViewCourseProgressPage() {
   console.log(currentLecture, "currentLecture");
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background relative">
       {showConfetti && <Confetti />}
       <div className="flex items-center justify-between p-4 bg-background border-b">
         <div className="flex items-center space-x-4">
@@ -159,6 +160,12 @@ function StudentViewCourseProgressPage() {
           />
           <div className="p-6 bg-background">
             <h2 className="text-2xl font-bold mb-2">{currentLecture?.title}</h2>
+            <div className="mt-4 p-4 bg-muted rounded-lg space-y-4">
+              <h3 className="text-lg font-semibold">Lecture Description</h3>
+              <p className="text-muted-foreground">
+                {currentLecture?.description || "No description available for this lecture."}
+              </p>
+            </div>
           </div>
         </div>
         <div
@@ -246,6 +253,12 @@ function StudentViewCourseProgressPage() {
           </DialogHeader>
         </DialogContent>
       </Dialog>
+      {studentCurrentCourseProgress?.courseDetails?._id && currentLecture?._id && (
+        <Chatbot
+          courseId={studentCurrentCourseProgress.courseDetails._id}
+          lectureId={currentLecture._id}
+        />
+      )}
     </div>
   );
 }

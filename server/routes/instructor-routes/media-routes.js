@@ -31,6 +31,8 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       });
     }
 
+    const { courseId, lectureId } = req.body;
+
     const result = await uploadMediaToCloudinary(req.file.path);
     
     // Clean up the temporary file
@@ -98,6 +100,8 @@ router.delete("/delete/:id", async (req, res) => {
 
 router.post("/bulk-upload", upload.array("files", 10), async (req, res) => {
   try {
+    const { courseId, lectureIds } = req.body;
+
     const uploadPromises = req.files.map((fileItem) =>
       uploadMediaToCloudinary(fileItem.path)
     );

@@ -145,10 +145,10 @@ function StudentViewCourseDetailsPage() {
           <h1 className="text-2xl md:text-3xl font-bold break-words">
             {studentViewCourseDetails?.title}
           </h1>
+          <p className="text-lg md:text-xl mb-4 text-muted-foreground break-words">
+            {studentViewCourseDetails?.subtitle}
+          </p>
         </div>
-        <p className="text-lg md:text-xl mb-4 text-muted-foreground break-words">
-          {studentViewCourseDetails?.subtitle}
-        </p>
         <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
           <span className="flex items-center">
             Created By <span className="font-semibold ml-1">{studentViewCourseDetails?.instructorName}</span>

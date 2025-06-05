@@ -167,3 +167,12 @@ export async function resetCourseProgressService(userId, courseId) {
 
   return data;
 }
+
+export async function sendChatMessageService(courseId, lectureId, message) {
+  const { data } = await axiosInstance.post("/api/chatbot/message", {
+    courseId,
+    lectureId,
+    message,
+  });
+  return data;
+}
