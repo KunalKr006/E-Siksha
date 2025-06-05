@@ -21,7 +21,7 @@ import {
   resetCourseProgressService,
 } from "@/services";
 import { Check, ChevronLeft, ChevronRight, Play } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useRef } from "react";
 import Confetti from "react-confetti";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -37,6 +37,8 @@ function StudentViewCourseProgressPage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSideBarOpen, setIsSideBarOpen] = useState(true);
   const { id } = useParams();
+
+  const videoRef = useRef(null);
 
   async function fetchCurrentCourseProgress() {
     const response = await getCurrentCourseProgressService(auth?.user?._id, id);

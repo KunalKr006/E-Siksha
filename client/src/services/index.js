@@ -176,3 +176,16 @@ export async function sendChatMessageService(courseId, lectureId, message) {
   });
   return data;
 }
+
+export const fetchCourseRecommendationsService = async (courseId) => {
+  try {
+    const response = await axiosInstance.get(`/student/course/recommendations/${courseId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching course recommendations:", error);
+    return {
+      success: false,
+      message: "Failed to fetch course recommendations",
+    };
+  }
+};

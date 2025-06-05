@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, forwardRef } from "react";
 import ReactPlayer from "react-player";
 import { Slider } from "../ui/slider";
 import { Button } from "../ui/button";
@@ -13,13 +13,13 @@ import {
   VolumeX,
 } from "lucide-react";
 
-function VideoPlayer({
+const VideoPlayer = forwardRef(({
   width = "100%",
   height = "100%",
   url,
   onProgressUpdate,
   progressData,
-}) {
+}, ref) => {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
   const [muted, setMuted] = useState(false);
@@ -31,6 +31,15 @@ function VideoPlayer({
   const playerRef = useRef(null);
   const playerContainerRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (playerRef.current && ref) {
+      const internalPlayer = playerRef.current.getInternalPlayer();
+      if (internalPlayer) {
+        ref.current = internalPlayer;
+      }
+    }
+  }, [playerRef, ref]);
 
   function handlePlayAndPause() {
     setPlaying(!playing);
@@ -232,6 +241,6 @@ function VideoPlayer({
       )}
     </div>
   );
-}
+});
 
 export default VideoPlayer;
