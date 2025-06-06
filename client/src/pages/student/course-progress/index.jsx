@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VideoPlayer from "@/components/video-player";
 import Chatbot from "@/components/chatbot";
+import Notes from "../../../components/student-view/course-progress/Notes";
 import { AuthContext } from "@/context/auth-context";
 import { StudentContext } from "@/context/student-context";
 import {
@@ -50,6 +51,8 @@ function StudentViewCourseProgressPage() {
           courseDetails: response?.data?.courseDetails,
           progress: response?.data?.progress,
         });
+
+        console.log('Fetched course progress data:', response?.data);
 
         if (response?.data?.completed) {
           setCurrentLecture(response?.data?.courseDetails?.curriculum[0]);
@@ -162,6 +165,20 @@ function StudentViewCourseProgressPage() {
           />
           <div className="p-6 bg-background">
             <h2 className="text-2xl font-bold mb-2">{currentLecture?.title}</h2>
+
+            {/* Add Transcription Section */}
+            {currentLecture?.transcription && (
+              <div className="mt-4 p-4 bg-muted rounded-lg space-y-4">
+                <h3 className="text-lg font-semibold">Video Transcription</h3>
+                <p className="text-muted-foreground whitespace-pre-wrap">
+                  {/* Render transcription text from segments */}
+                  {currentLecture.transcription.segments && Array.isArray(currentLecture.transcription.segments)
+                    ? currentLecture.transcription.segments.map(segment => segment.text).join(' ')
+                    : 'Transcription data available, but structure unexpected.'}
+                </p>
+              </div>
+            )}
+
             <div className="mt-4 p-4 bg-muted rounded-lg space-y-4">
               <h3 className="text-lg font-semibold">Lecture Description</h3>
               <p className="text-muted-foreground">
@@ -255,6 +272,13 @@ function StudentViewCourseProgressPage() {
           </DialogHeader>
         </DialogContent>
       </Dialog>
+      {currentLecture && (
+        <Notes
+          userId={auth?.user?._id}
+          courseId={id}
+          lectureId={currentLecture._id}
+        />
+      )}
       {studentCurrentCourseProgress?.courseDetails?._id && currentLecture?._id && (
         <Chatbot
           courseId={studentCurrentCourseProgress.courseDetails._id}

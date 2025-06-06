@@ -9,8 +9,10 @@ const studentViewCourseRoutes = require("./routes/student-routes/course-routes")
 const studentViewOrderRoutes = require("./routes/student-routes/order-routes");
 const studentCoursesRoutes = require("./routes/student-routes/student-courses-routes");
 const studentCourseProgressRoutes = require("./routes/student-routes/course-progress-routes");
+const notesRoutes = require("./routes/student-routes/notes-routes");
 const chatbotRoutes = require("./routes/chatbot-routes");
 const { initializeSearchService } = require('./services/search-service');
+const webhookRoutes = require("./routes/webhook-routes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,11 +53,13 @@ mongoose
 //routes configuration
 app.use("/auth", authRoutes);
 app.use("/media", mediaRoutes);
+app.use("/webhooks", webhookRoutes);
 app.use("/instructor/course", instructorCourseRoutes);
 app.use("/student/course", studentViewCourseRoutes);
 app.use("/student/order", studentViewOrderRoutes);
 app.use("/student/courses-bought", studentCoursesRoutes);
 app.use("/student/course-progress", studentCourseProgressRoutes);
+app.use("/student/notes", notesRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 
 app.use((err, req, res, next) => {
@@ -125,4 +129,13 @@ app.listen(PORT, () => {
 //     console.log('AssemblyAI WebSocket disconnected');
 //     // ws.close(); // Consider if you want to close client connection here
 //   });
+// });
+
+// Serve static files from the React app
+// app.use(express.static(path.join(__dirname, '../client/build')));
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../client/build/index.html'));
 // });

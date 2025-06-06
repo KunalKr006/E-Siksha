@@ -63,6 +63,7 @@ function StudentViewCourseDetailsPage() {
     if (response?.success) {
       setStudentViewCourseDetails(response?.data);
       setLoadingState(false);
+      console.log('Fetched course details:', response?.data);
     } else {
       setStudentViewCourseDetails(null);
       setLoadingState(false);
@@ -216,7 +217,14 @@ function StudentViewCourseDetailsPage() {
                       }}
                     >
                       <Lock className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm md:text-base">{curriculumItem?.title}</span>
+                      <div className="flex-1">
+                        <span className="text-sm md:text-base font-semibold">{curriculumItem?.title}</span>
+                        {curriculumItem?.transcription && (
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                            {curriculumItem.transcription}
+                          </p>
+                        )}
+                      </div>
                     </li>
                   )
                 )}

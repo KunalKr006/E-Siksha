@@ -62,17 +62,37 @@ const uploadMediaToCloudinary = async (filePath) => {
 
 const deleteMediaFromCloudinary = async (publicId) => {
   try {
+    console.log(`deleteMediaFromCloudinary called with publicId: ${publicId}`);
     if (!publicId) {
+      console.warn("deleteMediaFromCloudinary: No public ID provided");
       throw new Error("No public ID provided");
     }
 
+    console.log(`Calling Cloudinary uploader.destroy for publicId: ${publicId}`);
     const result = await cloudinary.uploader.destroy(publicId);
+    console.log(`Cloudinary uploader.destroy result for ${publicId}:`, result);
+    
+    // If the asset doesn't exist (result.result === 'not found'), consider it a success
+    // since the end goal is that the asset should not exist
+    if (result.result === 'not found') {
+      console.log(`Asset ${publicId} not found in Cloudinary - treating as successful deletion`);
+      return { result: 'ok' }; // Return success to maintain consistent behavior
+    }
     
     if (result.result !== "ok") {
+      console.error(`Cloudinary deletion failed for publicId ${publicId}:`, result);
       throw new Error("Failed to delete asset from cloudinary");
     }
+    console.log(`Cloudinary deletion successful for publicId: ${publicId}`);
+    return result;
+
   } catch (error) {
-    console.error("Cloudinary delete error:", error);
+    // If the error is about the asset not existing, treat it as a success
+    if (error.message && error.message.includes('not found')) {
+      console.log(`Asset ${publicId} not found in Cloudinary - treating as successful deletion`);
+      return { result: 'ok' };
+    }
+    console.error("Error in deleteMediaFromCloudinary:", error);
     throw new Error("Failed to delete asset from cloudinary");
   }
 };
