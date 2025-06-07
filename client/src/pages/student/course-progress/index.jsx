@@ -166,25 +166,18 @@ function StudentViewCourseProgressPage() {
           <div className="p-6 bg-background">
             <h2 className="text-2xl font-bold mb-2">{currentLecture?.title}</h2>
 
-            {/* Add Transcription Section */}
-            {currentLecture?.transcription && (
-              <div className="mt-4 p-4 bg-muted rounded-lg space-y-4">
-                <h3 className="text-lg font-semibold">Video Transcription</h3>
-                <p className="text-muted-foreground whitespace-pre-wrap">
-                  {/* Render transcription text from segments */}
-                  {currentLecture.transcription.segments && Array.isArray(currentLecture.transcription.segments)
-                    ? currentLecture.transcription.segments.map(segment => segment.text).join(' ')
-                    : 'Transcription data available, but structure unexpected.'}
-                </p>
-              </div>
-            )}
+            
 
+            
+
+            {/* Add Overview Section Here */}
             <div className="mt-4 p-4 bg-muted rounded-lg space-y-4">
-              <h3 className="text-lg font-semibold">Lecture Description</h3>
+              <h3 className="text-lg font-semibold">About this course</h3>
               <p className="text-muted-foreground">
-                {currentLecture?.description || "No description available for this lecture."}
+                {studentCurrentCourseProgress?.courseDetails?.description}
               </p>
             </div>
+
           </div>
         </div>
         <div
@@ -193,18 +186,12 @@ function StudentViewCourseProgressPage() {
           }`}
         >
           <Tabs defaultValue="content" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 p-0 h-14">
+            <TabsList className="grid w-full grid-cols-1 p-0 h-14">
               <TabsTrigger
                 value="content"
                 className="rounded-none h-full"
               >
                 Course Content
-              </TabsTrigger>
-              <TabsTrigger
-                value="overview"
-                className="rounded-none h-full"
-              >
-                Overview
               </TabsTrigger>
             </TabsList>
             <TabsContent value="content">
@@ -230,16 +217,6 @@ function StudentViewCourseProgressPage() {
                       </div>
                     )
                   )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-            <TabsContent value="overview" className="flex-1 overflow-hidden">
-              <ScrollArea className="h-full">
-                <div className="p-4">
-                  <h2 className="text-xl font-bold mb-4">About this course</h2>
-                  <p className="text-muted-foreground">
-                    {studentCurrentCourseProgress?.courseDetails?.description}
-                  </p>
                 </div>
               </ScrollArea>
             </TabsContent>

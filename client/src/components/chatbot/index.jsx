@@ -99,7 +99,7 @@ function Chatbot({
       ) : (
         <Card className="w-96 h-[500px] flex flex-col shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
-            <CardTitle className="text-md font-semibold">Course Chatbot</CardTitle>
+            <CardTitle className="text-md font-semibold">E-Siksha Bot</CardTitle>
             <Button variant="ghost" onClick={toggleChatbot} size="icon" className="w-6 h-6">
               <X className="h-4 w-4" />
             </Button>
