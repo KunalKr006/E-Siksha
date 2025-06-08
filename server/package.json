@@ -30,5 +30,6 @@
     "razorpay": "^2.9.6",
     "server": "file:",
     "string-similarity": "^4.0.4"
+    "@google/generative-ai": "^0.24.1"
   }
 }
