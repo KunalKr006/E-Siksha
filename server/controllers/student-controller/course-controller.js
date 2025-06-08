@@ -1,5 +1,6 @@
 const Course = require("../../models/Course");
 const StudentCourses = require("../../models/StudentCourses");
+const { searchCourses, getCourseRecommendations } = require("../../services/search-service");
 
 const getAllStudentViewCourses = async (req, res) => {
   try {
@@ -8,50 +9,27 @@ const getAllStudentViewCourses = async (req, res) => {
       level = [],
       primaryLanguage = [],
       sortBy = "price-lowtohigh",
+      search = "",
+      page = 1,
+      size = 10
     } = req.query;
 
-    console.log(req.query, "req.query");
+    // Convert string arrays to actual arrays with proper type checking
+    const filters = {
+      category: typeof category === 'string' ? category.split(",").filter(Boolean) : [],
+      level: typeof level === 'string' ? level.split(",").filter(Boolean) : [],
+      primaryLanguage: typeof primaryLanguage === 'string' ? primaryLanguage.split(",").filter(Boolean) : []
+    };
 
-    let filters = {};
-    if (category.length) {
-      filters.category = { $in: category.split(",") };
-    }
-    if (level.length) {
-      filters.level = { $in: level.split(",") };
-    }
-    if (primaryLanguage.length) {
-      filters.primaryLanguage = { $in: primaryLanguage.split(",") };
-    }
-
-    let sortParam = {};
-    switch (sortBy) {
-      case "price-lowtohigh":
-        sortParam.pricing = 1;
-
-        break;
-      case "price-hightolow":
-        sortParam.pricing = -1;
-
-        break;
-      case "title-atoz":
-        sortParam.title = 1;
-
-        break;
-      case "title-ztoa":
-        sortParam.title = -1;
-
-        break;
-
-      default:
-        sortParam.pricing = 1;
-        break;
-    }
-
-    const coursesList = await Course.find(filters).sort(sortParam);
+    // Use Elasticsearch for search
+    const searchResults = await searchCourses(search, filters, sortBy, parseInt(page), parseInt(size));
 
     res.status(200).json({
       success: true,
-      data: coursesList,
+      data: searchResults.hits,
+      total: searchResults.total,
+      page: parseInt(page),
+      size: parseInt(size)
     });
   } catch (e) {
     console.log(e);
@@ -122,9 +100,30 @@ const checkCoursePurchaseInfo = async (req, res) => {
   }
 };
 
+// Add a new endpoint for course recommendations
+const getRecommendedCourses = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { limit = 5 } = req.query;
+
+    const recommendations = await getCourseRecommendations(courseId, parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      data: recommendations
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Some error occurred!",
+    });
+  }
+};
 
 module.exports = {
   getAllStudentViewCourses,
   getStudentViewCourseDetails,
   checkCoursePurchaseInfo,
+  getRecommendedCourses
 };

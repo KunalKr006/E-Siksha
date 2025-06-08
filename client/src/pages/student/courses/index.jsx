@@ -8,6 +8,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { filterOptions, sortOptions } from "@/config";
@@ -16,8 +17,9 @@ import { StudentContext } from "@/context/student-context";
 import {
   checkCoursePurchaseInfoService,
   fetchStudentViewCourseListService,
+  fetchCourseRecommendationsService,
 } from "@/services";
-import { ArrowUpDownIcon, Menu, X } from "lucide-react";
+import { ArrowUpDownIcon, Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -38,8 +40,12 @@ function createSearchParamsHelper(filterParams) {
 function StudentViewCoursesPage() {
   const [sort, setSort] = useState("price-lowtohigh");
   const [filters, setFilters] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
+  const [recommendations, setRecommendations] = useState([]);
   const {
     studentViewCoursesList,
     setStudentViewCoursesList,
@@ -80,15 +86,35 @@ function StudentViewCoursesPage() {
     const query = new URLSearchParams({
       ...filters,
       sortBy: sort,
+      search: searchQuery,
+      page: page,
+      size: 10
     });
     const response = await fetchStudentViewCourseListService(query);
     if (response?.success) {
       setStudentViewCoursesList(response?.data);
+      setTotalResults(response?.total);
       setLoadingState(false);
+      console.log('Fetched course list:', response?.data);
+    }
+  }
+
+  async function fetchRecommendations() {
+    if (studentViewCoursesList.length > 0) {
+      const firstCourseId = studentViewCoursesList[0]._id;
+      const response = await fetchCourseRecommendationsService(firstCourseId);
+      if (response?.success) {
+        setRecommendations(response.data);
+      }
     }
   }
 
   async function handleCourseNavigate(getCurrentCourseId) {
+    if (!getCurrentCourseId) {
+      console.error("Attempted to navigate with an undefined course ID. Please check the data source.");
+      return;
+    }
+
     const response = await checkCoursePurchaseInfoService(
       getCurrentCourseId,
       auth?.user?._id
@@ -100,6 +126,8 @@ function StudentViewCoursesPage() {
       } else {
         navigate(`/course/details/${getCurrentCourseId}`);
       }
+    } else {
+      console.error("Error checking course purchase info:", response?.message || "Unknown error");
     }
   }
 
@@ -114,9 +142,21 @@ function StudentViewCoursesPage() {
   }, []);
 
   useEffect(() => {
-    if (filters !== null && sort !== null)
-      fetchAllStudentViewCourses(filters, sort);
-  }, [filters, sort]);
+    const timeoutId = setTimeout(() => {
+      if (filters !== null && sort !== null) {
+        setPage(1); // Reset to first page on new search
+        fetchAllStudentViewCourses(filters, sort);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, filters, sort]);
+
+  useEffect(() => {
+    if (studentViewCoursesList.length > 0) {
+      fetchRecommendations();
+    }
+  }, [studentViewCoursesList]);
 
   useEffect(() => {
     return () => {
@@ -125,6 +165,8 @@ function StudentViewCoursesPage() {
   }, []);
 
   console.log(loadingState, "loadingState");
+
+  const totalPages = Math.ceil(totalResults / 10);
 
   return (
     <div className="container mx-auto p-4">
@@ -200,79 +242,148 @@ function StudentViewCoursesPage() {
         </aside>
 
         <main className="flex-1">
-          <div className="flex justify-end items-center mb-4 gap-5">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 p-5"
-                >
-                  <ArrowUpDownIcon className="h-4 w-4" />
-                  <span className="text-[16px] font-medium">Sort By</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[180px]">
-                <DropdownMenuRadioGroup
-                  value={sort}
-                  onValueChange={(value) => setSort(value)}
-                >
-                  {sortOptions.map((sortItem) => (
-                    <DropdownMenuRadioItem
-                      value={sortItem.id}
-                      key={sortItem.id}
-                    >
-                      {sortItem.label}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <span className="text-sm text-black font-bold">
-              {studentViewCoursesList.length} Results
-            </span>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
+            <div className="w-full sm:w-96">
+              <Input
+                type="search"
+                placeholder="Search courses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div className="flex items-center gap-5">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 p-5"
+                  >
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                    <span className="text-[16px] font-medium">Sort By</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[180px]">
+                  <DropdownMenuRadioGroup
+                    value={sort}
+                    onValueChange={(value) => setSort(value)}
+                  >
+                    {sortOptions.map((sortItem) => (
+                      <DropdownMenuRadioItem
+                        value={sortItem.id}
+                        key={sortItem.id}
+                      >
+                        {sortItem.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <span className="text-sm text-black font-bold">
+                {totalResults} Results
+              </span>
+            </div>
           </div>
 
           <div className="space-y-4">
             {studentViewCoursesList && studentViewCoursesList.length > 0 ? (
-              studentViewCoursesList.map((courseItem) => (
-                <Card
-                  onClick={() => handleCourseNavigate(courseItem?._id)}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  key={courseItem?._id}
-                >
-                  <CardContent className="flex flex-col sm:flex-row gap-4 p-4">
-                    <div className="w-full sm:w-48 h-32 flex-shrink-0">
-                      <img
-                        src={courseItem?.image}
-                        alt={courseItem?.title}
-                        className="w-full h-full object-cover rounded-md"
-                      />
+              <>
+                {studentViewCoursesList.map((courseItem) => (
+                  <Card
+                    onClick={() => handleCourseNavigate(courseItem?._id)}
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    key={courseItem?._id}
+                  >
+                    <CardContent className="flex flex-col sm:flex-row gap-4 p-4">
+                      <div className="w-full sm:w-48 h-32 flex-shrink-0">
+                        <img
+                          src={courseItem?.image}
+                          alt={courseItem?.title}
+                          className="w-full h-full object-cover rounded-md"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-xl mb-2 line-clamp-2">
+                          {courseItem?.title}
+                        </CardTitle>
+                        <p className="text-sm text-gray-600 mb-1">
+                          Created By{" "}
+                          <span className="font-bold">
+                            {courseItem?.instructorName}
+                          </span>
+                        </p>
+                        <p className="text-[16px] text-gray-600 mt-3 mb-2">
+                          {`${courseItem?.curriculum?.length} ${
+                            courseItem?.curriculum?.length <= 1
+                              ? "Lecture"
+                              : "Lectures"
+                          } - ${courseItem?.level.toUpperCase()} Level`}
+                        </p>
+                        <p className="font-bold text-lg">
+                          ₹{courseItem?.pricing}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm">
+                      Page {page} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Recommendations Section */}
+                {recommendations.length > 0 && (
+                  <div className="mt-8">
+                    <h2 className="text-2xl font-bold mb-4">Recommended Courses</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {recommendations.map((course) => (
+                        <Card
+                          key={course._id}
+                          className="cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => handleCourseNavigate(course._id)}
+                        >
+                          <CardContent className="p-4">
+                            <img
+                              src={course.image}
+                              alt={course.title}
+                              className="w-full h-40 object-cover rounded-md mb-4"
+                            />
+                            <CardTitle className="text-lg mb-2 line-clamp-2">
+                              {course.title}
+                            </CardTitle>
+                            <p className="text-sm text-gray-600 mb-1">
+                              By {course.instructorName}
+                            </p>
+                            <p className="font-bold">₹{course.pricing}</p>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                    <div className="flex-1">
-                      <CardTitle className="text-xl mb-2 line-clamp-2">
-                        {courseItem?.title}
-                      </CardTitle>
-                      <p className="text-sm text-gray-600 mb-1">
-                        Created By{" "}
-                        <span className="font-bold">
-                          {courseItem?.instructorName}
-                        </span>
-                      </p>
-                      <p className="text-[16px] text-gray-600 mt-3 mb-2">
-                        {`${courseItem?.curriculum?.length} ${
-                          courseItem?.curriculum?.length <= 1
-                            ? "Lecture"
-                            : "Lectures"
-                        } - ${courseItem?.level.toUpperCase()} Level`}
-                      </p>
-                      <p className="font-bold text-lg">
-                        ₹{courseItem?.pricing}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                  </div>
+                )}
+              </>
             ) : loadingState ? (
               <Skeleton />
             ) : (

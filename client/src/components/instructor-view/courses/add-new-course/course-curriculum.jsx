@@ -90,18 +90,37 @@ function CourseCurriculum() {
     const getCurrentVideoPublicId =
       cpyCourseCurriculumFormData[currentIndex].public_id;
 
-    const deleteCurrentMediaResponse = await mediaDeleteService(
-      getCurrentVideoPublicId
-    );
+    if (!getCurrentVideoPublicId) {
+        console.warn("No public ID found for video to replace.");
+        // Optionally, show a message to the user
+        alert("Error: No video found to replace.");
+        return;
+    }
 
-    if (deleteCurrentMediaResponse?.success) {
-      cpyCourseCurriculumFormData[currentIndex] = {
-        ...cpyCourseCurriculumFormData[currentIndex],
-        videoUrl: "",
-        public_id: "",
-      };
+    try {
+        const deleteCurrentMediaResponse = await mediaDeleteService(
+          getCurrentVideoPublicId
+        );
 
-      setCourseCurriculumFormData(cpyCourseCurriculumFormData);
+        if (deleteCurrentMediaResponse?.success) {
+          cpyCourseCurriculumFormData[currentIndex] = {
+            ...cpyCourseCurriculumFormData[currentIndex],
+            videoUrl: "",
+            public_id: "",
+          };
+
+          setCourseCurriculumFormData(cpyCourseCurriculumFormData);
+           // Now, you would typically trigger the file input to allow uploading the new video
+           // This part needs to be implemented in your UI (e.g., opening a file picker)
+           console.log("Previous video deleted. Ready to upload new video.");
+        } else {
+            // Handle cases where success is false but no error is thrown
+             console.error("mediaDeleteService reported not success for replacement.", deleteCurrentMediaResponse);
+             alert("Failed to delete previous video. Please try again.");
+        }
+    } catch (error) {
+      console.error("Error replacing video:", error);
+      alert("An error occurred while trying to replace the video. Please check the console.");
     }
   }
 
@@ -175,14 +194,35 @@ function CourseCurriculum() {
     const getCurrentSelectedVideoPublicId =
       cpyCourseCurriculumFormData[currentIndex].public_id;
 
-    const response = await mediaDeleteService(getCurrentSelectedVideoPublicId);
+     if (!getCurrentSelectedVideoPublicId) {
+        console.warn("No public ID found for lecture video to delete.");
+         // Remove the lecture from state anyway if no public ID
+         cpyCourseCurriculumFormData = cpyCourseCurriculumFormData.filter(
+           (_, index) => index !== currentIndex
+         );
+         setCourseCurriculumFormData(cpyCourseCurriculumFormData);
+         alert("Lecture without a video was removed.");
+        return;
+    }
 
-    if (response?.success) {
-      cpyCourseCurriculumFormData = cpyCourseCurriculumFormData.filter(
-        (_, index) => index !== currentIndex
-      );
+    try {
+        const response = await mediaDeleteService(getCurrentSelectedVideoPublicId);
 
-      setCourseCurriculumFormData(cpyCourseCurriculumFormData);
+        if (response?.success) {
+          cpyCourseCurriculumFormData = cpyCourseCurriculumFormData.filter(
+            (_, index) => index !== currentIndex
+          );
+
+          setCourseCurriculumFormData(cpyCourseCurriculumFormData);
+          console.log("Lecture deleted successfully.");
+        }  else {
+             // Handle cases where success is false but no error is thrown
+             console.error("mediaDeleteService reported not success for deletion.", response);
+             alert("Failed to delete lecture video. Please try again.");
+        }
+    } catch (error) {
+      console.error("Error deleting lecture:", error);
+      alert("An error occurred while trying to delete the lecture. Please check the console.");
     }
   }
 

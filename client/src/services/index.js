@@ -38,9 +38,14 @@ export async function mediaUploadService(formData, onProgressCallback) {
 }
 
 export async function mediaDeleteService(id) {
-  const { data } = await axiosInstance.delete(`/media/delete/${id}`);
-
-  return data;
+  try {
+    const { data } = await axiosInstance.delete(`/media/delete/${id}`);
+    console.log('mediaDeleteService response:', data);
+    return data;
+  } catch (error) {
+    console.error('Error in mediaDeleteService:', error);
+    throw error; // Re-throw the error so the calling function can handle it
+  }
 }
 
 export async function fetchInstructorCourseListService() {
@@ -166,4 +171,78 @@ export async function resetCourseProgressService(userId, courseId) {
   );
 
   return data;
+}
+
+export async function sendChatMessageService(courseId, lectureId, message) {
+  const { data } = await axiosInstance.post("/api/chatbot/message", {
+    courseId,
+    lectureId,
+    message,
+  });
+  return data;
+}
+
+export const fetchCourseRecommendationsService = async (courseId) => {
+  try {
+    const response = await axiosInstance.get(`/student/course/recommendations/${courseId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching course recommendations:", error);
+    return {
+      success: false,
+      message: "Failed to fetch course recommendations",
+    };
+  }
+};
+
+// Notes services
+export async function getNotesService(userId, courseId, lectureId) {
+  try {
+    const { data } = await axiosInstance.get(
+      `/student/notes/lecture?userId=${userId}&courseId=${courseId}&lectureId=${lectureId}`
+    );
+    return data;
+  } catch (error) {
+    console.error("Error fetching notes:", error);
+    throw error;
+  }
+}
+
+export async function saveNotesService(userId, courseId, lectureId, content) {
+  try {
+    const { data } = await axiosInstance.post("/student/notes/save", {
+      userId,
+      courseId,
+      lectureId,
+      content
+    });
+    return data;
+  } catch (error) {
+    console.error("Error saving notes:", error);
+    throw error;
+  }
+}
+
+export async function deleteNotesService(userId, courseId, lectureId) {
+  try {
+    const { data } = await axiosInstance.delete(
+      `/student/notes/delete?userId=${userId}&courseId=${courseId}&lectureId=${lectureId}`
+    );
+    return data;
+  } catch (error) {
+    console.error("Error deleting notes:", error);
+    throw error;
+  }
+}
+
+export async function getCourseNotesService(userId, courseId) {
+  try {
+    const { data } = await axiosInstance.get(
+      `/student/notes/course?userId=${userId}&courseId=${courseId}`
+    );
+    return data;
+  } catch (error) {
+    console.error("Error fetching course notes:", error);
+    throw error;
+  }
 }

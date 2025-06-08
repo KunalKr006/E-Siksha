@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VideoPlayer from "@/components/video-player";
+import Chatbot from "@/components/chatbot";
+import Notes from "../../../components/student-view/course-progress/Notes";
 import { AuthContext } from "@/context/auth-context";
 import { StudentContext } from "@/context/student-context";
 import {
@@ -20,7 +22,7 @@ import {
   resetCourseProgressService,
 } from "@/services";
 import { Check, ChevronLeft, ChevronRight, Play } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useRef } from "react";
 import Confetti from "react-confetti";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -37,6 +39,8 @@ function StudentViewCourseProgressPage() {
   const [isSideBarOpen, setIsSideBarOpen] = useState(true);
   const { id } = useParams();
 
+  const videoRef = useRef(null);
+
   async function fetchCurrentCourseProgress() {
     const response = await getCurrentCourseProgressService(auth?.user?._id, id);
     if (response?.success) {
@@ -47,6 +51,8 @@ function StudentViewCourseProgressPage() {
           courseDetails: response?.data?.courseDetails,
           progress: response?.data?.progress,
         });
+
+        console.log('Fetched course progress data:', response?.data);
 
         if (response?.data?.completed) {
           setCurrentLecture(response?.data?.courseDetails?.curriculum[0]);
@@ -120,7 +126,7 @@ function StudentViewCourseProgressPage() {
   console.log(currentLecture, "currentLecture");
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background relative">
       {showConfetti && <Confetti />}
       <div className="flex items-center justify-between p-4 bg-background border-b">
         <div className="flex items-center space-x-4">
@@ -159,6 +165,19 @@ function StudentViewCourseProgressPage() {
           />
           <div className="p-6 bg-background">
             <h2 className="text-2xl font-bold mb-2">{currentLecture?.title}</h2>
+
+            
+
+            
+
+            {/* Add Overview Section Here */}
+            <div className="mt-4 p-4 bg-muted rounded-lg space-y-4">
+              <h3 className="text-lg font-semibold">About this course</h3>
+              <p className="text-muted-foreground">
+                {studentCurrentCourseProgress?.courseDetails?.description}
+              </p>
+            </div>
+
           </div>
         </div>
         <div
@@ -167,18 +186,12 @@ function StudentViewCourseProgressPage() {
           }`}
         >
           <Tabs defaultValue="content" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 p-0 h-14">
+            <TabsList className="grid w-full grid-cols-1 p-0 h-14">
               <TabsTrigger
                 value="content"
                 className="rounded-none h-full"
               >
                 Course Content
-              </TabsTrigger>
-              <TabsTrigger
-                value="overview"
-                className="rounded-none h-full"
-              >
-                Overview
               </TabsTrigger>
             </TabsList>
             <TabsContent value="content">
@@ -204,16 +217,6 @@ function StudentViewCourseProgressPage() {
                       </div>
                     )
                   )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-            <TabsContent value="overview" className="flex-1 overflow-hidden">
-              <ScrollArea className="h-full">
-                <div className="p-4">
-                  <h2 className="text-xl font-bold mb-4">About this course</h2>
-                  <p className="text-muted-foreground">
-                    {studentCurrentCourseProgress?.courseDetails?.description}
-                  </p>
                 </div>
               </ScrollArea>
             </TabsContent>
@@ -246,6 +249,19 @@ function StudentViewCourseProgressPage() {
           </DialogHeader>
         </DialogContent>
       </Dialog>
+      {currentLecture && (
+        <Notes
+          userId={auth?.user?._id}
+          courseId={id}
+          lectureId={currentLecture._id}
+        />
+      )}
+      {studentCurrentCourseProgress?.courseDetails?._id && currentLecture?._id && (
+        <Chatbot
+          courseId={studentCurrentCourseProgress.courseDetails._id}
+          lectureId={currentLecture._id}
+        />
+      )}
     </div>
   );
 }

@@ -30,7 +30,7 @@ function StudentCoursesPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-5">
         {studentBoughtCoursesList && studentBoughtCoursesList.length > 0 ? (
           studentBoughtCoursesList.map((course) => (
-            <Card key={course.id} className="flex flex-col">
+            <Card key={course?.courseId} className="flex flex-col">
               <CardContent className="p-4 flex-grow">
                 <img
                   src={course?.courseImage}

@@ -26,7 +26,16 @@ const addNewCourse = async (req, res) => {
 
 const getAllCourses = async (req, res) => {
   try {
-    const coursesList = await Course.find({});
+    // Filter courses by the logged-in instructor's ID
+    const instructorId = req.user?._id; // Assuming user ID is available in req.user
+    if (!instructorId) {
+      return res.status(401).json({
+        success: false,
+        message: "Instructor not authenticated."
+      });
+    }
+    
+    const coursesList = await Course.find({ instructorId: instructorId });
     
     // Enhance each course with complete student information
     const enhancedCoursesList = await Promise.all(
