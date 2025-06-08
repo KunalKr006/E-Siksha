@@ -25,7 +25,7 @@ const clientUrl=process.env.CLIENT_URL;
 
 app.use(
   cors({
-    origin: clientUrl,
+    origin: "https://e-siksha.onrender.com",
     methods: ["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
