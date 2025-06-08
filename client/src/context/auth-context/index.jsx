@@ -18,8 +18,59 @@ export default function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Add validation functions
+  function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  function validatePassword(password) {
+    // Password must contain at least:
+    // - 6 characters
+    // - 1 uppercase letter
+    // - 1 lowercase letter
+    // - 1 number
+    // - 1 special character
+    const minLength = 6;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    return (
+      password.length >= minLength &&
+      hasUpperCase &&
+      hasLowerCase &&
+      hasNumbers &&
+      hasSpecialChar
+    );
+  }
+
+  function getPasswordValidationMessage(password) {
+    if (!password) return "Password is required";
+    if (password.length < 6) return "Password must be at least 6 characters long";
+    if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter";
+    if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter";
+    if (!/\d/.test(password)) return "Password must contain at least one number";
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return "Password must contain at least one special character";
+    return "";
+  }
+
   async function handleRegisterUser(event, onSuccess) {
     event.preventDefault();
+    
+    // Validate email and password before making the API call
+    if (!validateEmail(signUpFormData.userEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    
+    const passwordMessage = getPasswordValidationMessage(signUpFormData.password);
+    if (passwordMessage) {
+      toast.error(passwordMessage);
+      return;
+    }
+    
     try {
       const data = await registerService(signUpFormData);
       if (data.success) {
@@ -91,16 +142,23 @@ export default function AuthProvider({ children }) {
     return (
       signInFormData &&
       signInFormData.userEmail !== "" &&
+      validateEmail(signInFormData.userEmail) &&
       signInFormData.password !== ""
     );
   }
 
   function checkIfSignUpFormIsValid() {
+    const isEmailValid = validateEmail(signUpFormData.userEmail);
+    const isPasswordValid = validatePassword(signUpFormData.password);
+    const passwordMessage = getPasswordValidationMessage(signUpFormData.password);
+    
     return (
       signUpFormData &&
       signUpFormData.userName !== "" &&
       signUpFormData.userEmail !== "" &&
+      isEmailValid &&
       signUpFormData.password !== "" &&
+      isPasswordValid &&
       signUpFormData.role !== ""
     );
   }
@@ -165,6 +223,9 @@ export default function AuthProvider({ children }) {
         checkIfSignInFormIsValid,
         checkIfSignUpFormIsValid,
         resetCredentials,
+        validateEmail,
+        validatePassword,
+        getPasswordValidationMessage,
       }}
     >
       {children}

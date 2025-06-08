@@ -8,28 +8,53 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
+import { AuthContext } from "@/context/auth-context";
+import { useContext } from "react";
 
 function FormControls({ formControls = [], formData, setFormData }) {
+  const { validateEmail, validatePassword, getPasswordValidationMessage } = useContext(AuthContext);
+
+  function getValidationMessage(controlItem, value) {
+    if (!value) return null;
+    
+    if (controlItem.name === "userEmail") {
+      return !validateEmail(value) ? "Please enter a valid email address" : null;
+    }
+    
+    if (controlItem.name === "password") {
+      return getPasswordValidationMessage(value);
+    }
+    
+    return null;
+  }
+
   function renderComponentByType(getControlItem) {
     let element = null;
     const currentControlItemValue = formData[getControlItem.name] || "";
+    const validationMessage = getValidationMessage(getControlItem, currentControlItemValue);
 
     switch (getControlItem.componentType) {
       case "input":
         element = (
-          <Input
-            id={getControlItem.name}
-            name={getControlItem.name}
-            placeholder={getControlItem.placeholder}
-            type={getControlItem.type}
-            value={currentControlItemValue}
-            onChange={(event) =>
-              setFormData({
-                ...formData,
-                [getControlItem.name]: event.target.value,
-              })
-            }
-          />
+          <div className="space-y-1">
+            <Input
+              id={getControlItem.name}
+              name={getControlItem.name}
+              placeholder={getControlItem.placeholder}
+              type={getControlItem.type}
+              value={currentControlItemValue}
+              onChange={(event) =>
+                setFormData({
+                  ...formData,
+                  [getControlItem.name]: event.target.value,
+                })
+              }
+              className={validationMessage ? "border-red-500" : ""}
+            />
+            {validationMessage && (
+              <p className="text-sm text-red-500">{validationMessage}</p>
+            )}
+          </div>
         );
         break;
       case "select":

@@ -6,16 +6,16 @@ const mongoose = require('mongoose');
 
 // Initialize Elasticsearch client with retry configuration
 const elasticClient = new Client({
-  node: 'https://localhost:9200',
+  node: process.env.ELASTICSEARCH_URL,
   auth: {
-    username: process.env.ELASTICSEARCH_USERNAME || 'elastic',
-    password: process.env.ELASTICSEARCH_PASSWORD || 'changeme'
+    username: process.env.ELASTICSEARCH_USERNAME,
+    password: process.env.ELASTICSEARCH_PASSWORD
   },
   maxRetries: 5,
   requestTimeout: 30000,
   sniffOnStart: false,
   tls: {
-    rejectUnauthorized: false // Allow self-signed certificates in development
+    rejectUnauthorized: true // Required for Elastic Cloud
   }
 });
 
