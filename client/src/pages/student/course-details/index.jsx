@@ -16,11 +16,23 @@ import {
   checkCoursePurchaseInfoService,
   createPaymentService,
   fetchStudentViewCourseDetailsService,
+  captureAndFinalizePaymentService,
 } from "@/services";
 import { CheckCircle, Globe, Lock, PlayCircle } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "@/api/axiosInstance";
+
+// Add Razorpay script
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 function StudentViewCourseDetailsPage() {
   const {
@@ -33,6 +45,10 @@ function StudentViewCourseDetailsPage() {
   } = useContext(StudentContext);
 
   const { auth } = useContext(AuthContext);
+
+  const [displayCurrentVideoFreePreview, setDisplayCurrentVideoFreePreview] =
+    useState(null);
+  const [showFreePreviewDialog, setShowFreePreviewDialog] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
@@ -59,38 +75,87 @@ function StudentViewCourseDetailsPage() {
     if (response?.success) {
       setStudentViewCourseDetails(response?.data);
       setLoadingState(false);
+      console.log('Fetched course details:', response?.data);
     } else {
       setStudentViewCourseDetails(null);
       setLoadingState(false);
     }
   }
 
-  async function handleCreatePayment() {
-    const paymentPayload = {
-      userId: auth?.user?._id,
-      userName: auth?.user?.userName,
-      userEmail: auth?.user?.userEmail,
-      orderStatus: "confirmed",
-      paymentMethod: "free",
-      paymentStatus: "paid",
-      orderDate: new Date(),
-      instructorId: studentViewCourseDetails?.instructorId,
-      instructorName: studentViewCourseDetails?.instructorName,
-      courseImage: studentViewCourseDetails?.image,
-      courseTitle: studentViewCourseDetails?.title,
-      courseId: studentViewCourseDetails?._id,
-      coursePricing: studentViewCourseDetails?.pricing,
-    };
+  function handleSetFreePreview(getCurrentVideoInfo) {
+    if (getCurrentVideoInfo?.freePreview) {
+      setDisplayCurrentVideoFreePreview(getCurrentVideoInfo?.videoUrl);
+    }
+  }
 
+  async function handleCreatePayment() {
     try {
+      // Load Razorpay script
+      const res = await loadRazorpayScript();
+      if (!res) {
+        console.error("Razorpay SDK failed to load");
+        return;
+      }
+
+      const paymentPayload = {
+        userId: auth?.user?._id,
+        userName: auth?.user?.userName,
+        userEmail: auth?.user?.userEmail,
+        instructorId: studentViewCourseDetails?.instructorId,
+        instructorName: studentViewCourseDetails?.instructorName,
+        courseImage: studentViewCourseDetails?.image,
+        courseTitle: studentViewCourseDetails?.title,
+        courseId: studentViewCourseDetails?._id,
+        coursePricing: studentViewCourseDetails?.pricing,
+      };
+
       const response = await createPaymentService(paymentPayload);
+      
       if (response.success) {
-        navigate('/student-courses');
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: response.data.amount,
+          currency: response.data.currency,
+          name: "E-Siksha",
+          description: `Purchase ${studentViewCourseDetails?.title}`,
+          order_id: response.data.razorpayOrderId,
+          handler: async function (response) {
+            try {
+              const paymentData = {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              };
+
+              const captureResponse = await captureAndFinalizePaymentService(paymentData);
+              
+              if (captureResponse.success) {
+                navigate('/student-courses');
+              }
+            } catch (error) {
+              console.error("Error capturing payment:", error);
+            }
+          },
+          prefill: {
+            name: auth?.user?.userName,
+            email: auth?.user?.userEmail,
+          },
+          theme: {
+            color: "#2563eb",
+          },
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
       }
     } catch (error) {
       console.error("Error in course purchase:", error);
     }
   }
+
+  useEffect(() => {
+    if (displayCurrentVideoFreePreview !== null) setShowFreePreviewDialog(true);
+  }, [displayCurrentVideoFreePreview]);
 
   useEffect(() => {
     if (currentCourseDetailsId !== null) fetchStudentViewCourseDetails();
@@ -108,6 +173,13 @@ function StudentViewCourseDetailsPage() {
   }, [location.pathname]);
 
   if (loadingState) return <Skeleton />;
+
+  const getIndexOfFreePreviewUrl =
+    studentViewCourseDetails !== null
+      ? studentViewCourseDetails?.curriculum?.findIndex(
+          (item) => item.freePreview
+        )
+      : -1;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -149,19 +221,36 @@ function StudentViewCourseDetailsPage() {
       </div>
 
       {/* Main Content and Sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr,500px] gap-6">
-        <main>
-          {/* Course Description */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Main Content */}
+        <main className="flex-grow lg:max-w-[calc(100%-520px)]">
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>What you'll learn</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {studentViewCourseDetails?.objectives
+                  .split(",")
+                  .map((objective, index) => (
+                    <li key={index} className="flex items-start">
+                      <CheckCircle className="mr-2 h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm md:text-base">{objective}</span>
+                    </li>
+                  ))}
+              </ul>
+            </CardContent>
+          </Card>
+
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Course Description</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap">{studentViewCourseDetails?.description}</p>
+            <CardContent className="text-sm md:text-base whitespace-pre-wrap">
+              {studentViewCourseDetails?.description}
             </CardContent>
           </Card>
 
-          {/* Course Curriculum */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Course Curriculum</CardTitle>
@@ -180,6 +269,11 @@ function StudentViewCourseDetailsPage() {
                       <Lock className="mr-2 h-4 w-4 text-muted-foreground" />
                       <div className="flex-1">
                         <span className="text-sm md:text-base font-semibold">{curriculumItem?.title}</span>
+                        {curriculumItem?.transcription && (
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                            {curriculumItem.transcription}
+                          </p>
+                        )}
                       </div>
                     </li>
                   )
@@ -205,13 +299,65 @@ function StudentViewCourseDetailsPage() {
                   ₹{studentViewCourseDetails?.pricing}
                 </span>
               </div>
-              <Button onClick={handleCreatePayment} className="w-full">
-                Buy Now
+              <Button 
+                onClick={handleCreatePayment} 
+                className="w-full"
+                disabled={!auth?.user}
+              >
+                {auth?.user ? "Buy Now" : "Login to Purchase"}
               </Button>
             </CardContent>
           </Card>
         </aside>
       </div>
+
+      {/* Preview Dialog */}
+      <Dialog
+        open={showFreePreviewDialog}
+        onOpenChange={() => {
+          setShowFreePreviewDialog(false);
+          setDisplayCurrentVideoFreePreview(null);
+        }}
+      >
+        <DialogContent className="w-[95vw] max-w-[800px] p-4 md:p-6">
+          <DialogHeader>
+            <DialogTitle>Course Preview</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              This is a preview lecture. Purchase the course to access all content.
+            </p>
+          </DialogHeader>
+          <div className="aspect-video rounded-lg overflow-hidden mb-4">
+            <VideoPlayer
+              url={displayCurrentVideoFreePreview}
+              width="100%"
+              height="100%"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            {studentViewCourseDetails?.curriculum
+              ?.filter((item) => item.freePreview)
+              .map((filteredItem, index) => (
+                <p
+                  key={index}
+                  onClick={() => handleSetFreePreview(filteredItem)}
+                  className="cursor-pointer text-sm md:text-base font-medium p-2 hover:bg-muted/50 rounded-md transition-colors"
+                >
+                  {filteredItem?.title}
+                </p>
+              ))}
+          </div>
+          <DialogFooter className="sm:justify-between mt-4">
+            <Button onClick={handleCreatePayment} className="flex-1">
+              Buy Full Course
+            </Button>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Close
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -114,21 +114,11 @@ export async function checkCoursePurchaseInfoService(courseId, studentId) {
 
 export async function createPaymentService(formData) {
   const { data } = await axiosInstance.post(`/student/order/create`, formData);
-
   return data;
 }
 
-export async function captureAndFinalizePaymentService(
-  paymentId,
-  payerId,
-  orderId
-) {
-  const { data } = await axiosInstance.post(`/student/order/capture`, {
-    paymentId,
-    payerId,
-    orderId,
-  });
-
+export async function captureAndFinalizePaymentService(paymentData) {
+  const { data } = await axiosInstance.post(`/student/order/capture`, paymentData);
   return data;
 }
 

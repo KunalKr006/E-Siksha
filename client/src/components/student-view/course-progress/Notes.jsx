@@ -6,11 +6,6 @@ import {
   saveNotesService,
   deleteNotesService,
 } from "../../../services";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 const Notes = ({ userId, courseId, lectureId }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -92,54 +87,36 @@ const Notes = ({ userId, courseId, lectureId }) => {
 
   return (
     <div className="fixed bottom-32 right-4 z-50">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-105"
-          >
-            <FaStickyNote size={32} />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="left">
-          <p>Take Lecture Notes</p>
-        </TooltipContent>
-      </Tooltip>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+        title="Notes"
+      >
+        <FaStickyNote size={24} />
+      </button>
 
       {isOpen && (
-        <div className="absolute bottom-20 right-0 w-96 bg-white rounded-lg shadow-xl border border-gray-200">
+        <div className="absolute bottom-16 right-0 w-96 bg-white rounded-lg shadow-xl border border-gray-200">
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Lecture Notes</h3>
               <div className="flex gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors hover:scale-105"
-                    >
-                      <FaSave size={24} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Save Notes</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={handleDelete}
-                      disabled={isSaving}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors hover:scale-105"
-                    >
-                      <FaTrash size={24} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Delete Notes</p>
-                  </TooltipContent>
-                </Tooltip>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                  title="Save Notes"
+                >
+                  <FaSave size={20} />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={isSaving}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                  title="Delete Notes"
+                >
+                  <FaTrash size={20} />
+                </button>
               </div>
             </div>
             {isLoading ? (

@@ -1,35 +1,39 @@
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { captureAndFinalizePaymentService } from "@/services";
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { captureAndFinalizePaymentService } from "@/services";
 
-function PaypalPaymentReturnPage() {
+function PaymentReturnPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
-  const paymentId = params.get("paymentId");
-  const payerId = params.get("PayerID");
+  const razorpay_payment_id = params.get("razorpay_payment_id");
+  const razorpay_order_id = params.get("razorpay_order_id");
+  const razorpay_signature = params.get("razorpay_signature");
 
   useEffect(() => {
-    if (paymentId && payerId) {
+    if (razorpay_payment_id && razorpay_order_id && razorpay_signature) {
       async function capturePayment() {
-        const orderId = JSON.parse(sessionStorage.getItem("currentOrderId"));
+        try {
+          const paymentData = {
+            razorpay_payment_id,
+            razorpay_order_id,
+            razorpay_signature,
+          };
 
-        const response = await captureAndFinalizePaymentService(
-          paymentId,
-          payerId,
-          orderId
-        );
+          const response = await captureAndFinalizePaymentService(paymentData);
 
-        if (response?.success) {
-          sessionStorage.removeItem("currentOrderId");
-          navigate("/student-courses");
+          if (response?.success) {
+            navigate("/student-courses");
+          }
+        } catch (error) {
+          console.error("Error capturing payment:", error);
         }
       }
 
       capturePayment();
     }
-  }, [payerId, paymentId, navigate]);
+  }, [razorpay_payment_id, razorpay_order_id, razorpay_signature, navigate]);
 
   return (
     <Card>
@@ -40,4 +44,4 @@ function PaypalPaymentReturnPage() {
   );
 }
 
-export default PaypalPaymentReturnPage;
+export default PaymentReturnPage;
