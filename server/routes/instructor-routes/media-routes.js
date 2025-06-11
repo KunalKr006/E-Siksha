@@ -19,28 +19,11 @@ if (!fs.existsSync(uploadsDir)) {
 const upload = multer({ 
   dest: uploadsDir,
   limits: {
-    fileSize: 500 * 1024 * 1024, // 500MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit
   }
 });
 
-// Add error handling middleware for multer errors
-const handleMulterError = (err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
-        success: false,
-        message: `File size too large. Maximum size is ${upload.limits.fileSize / (1024 * 1024)}MB.`
-      });
-    }
-    return res.status(400).json({
-      success: false,
-      message: `Upload error: ${err.message}`
-    });
-  }
-  next(err);
-};
-
-router.post("/upload", upload.single("file"), handleMulterError, async (req, res) => {
+router.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ 
@@ -52,22 +35,15 @@ router.post("/upload", upload.single("file"), handleMulterError, async (req, res
     const { courseId, lectureId } = req.body;
 
     if (!courseId || !lectureId) {
-      // Clean up the temporary file
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error("Error deleting temporary file:", err);
-      });
-      return res.status(400).json({
-        success: false,
-        message: "courseId and lectureId are required"
-      });
+         // Clean up the temporary file
+        fs.unlink(req.file.path, (err) => {
+            if (err) console.error("Error deleting temporary file:", err);
+        });
+        return res.status(400).json({
+             success: false,
+             message: "courseId and lectureId are required"
+        });
     }
-
-    console.log(`Attempting to upload file for course ${courseId}, lecture ${lectureId}`);
-    console.log('File details:', {
-      filename: req.file.filename,
-      mimetype: req.file.mimetype,
-      size: req.file.size
-    });
 
     const result = await uploadMediaToCloudinary(req.file.path);
     
@@ -91,12 +67,7 @@ router.post("/upload", upload.single("file"), handleMulterError, async (req, res
     }
 
     // Send appropriate error message
-    if (error.message === "Invalid Cloudinary credentials") {
-      res.status(500).json({ 
-        success: false, 
-        message: "Server configuration error. Please contact support." 
-      });
-    } else if (error.message === "Error uploading to cloudinary") {
+    if (error.message === "Error uploading to cloudinary") {
       res.status(500).json({ 
         success: false, 
         message: "Error uploading to cloud storage. Please try again." 
@@ -104,13 +75,12 @@ router.post("/upload", upload.single("file"), handleMulterError, async (req, res
     } else if (error.code === "LIMIT_FILE_SIZE") {
       res.status(400).json({ 
         success: false, 
-        message: "File size too large. Maximum size is 500MB." 
+        message: "File size too large. Maximum size is 50MB." 
       });
     } else {
       res.status(500).json({ 
         success: false, 
-        message: "Error uploading file. Please try again.",
-        error: error.message // Include error message for debugging
+        message: "Error uploading file. Please try again." 
       });
     }
   }
@@ -184,4 +154,3 @@ router.post("/bulk-upload", upload.array("files", 10), async (req, res) => {
 });
 
 module.exports = router;
-

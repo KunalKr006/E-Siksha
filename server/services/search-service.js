@@ -824,29 +824,6 @@ async function fallbackToMongoDBSearch(query, filters, sortBy, page, size) {
   }
 }
 
-// Re-index all courses
-async function reindexAllCourses() {
-  try {
-    const courses = await Course.find({});
-    console.log(`Found ${courses.length} courses to re-index`);
-    
-    for (const course of courses) {
-      try {
-        await indexCourse(course);
-        console.log(`Re-indexed course: ${course.title}`);
-      } catch (error) {
-        console.error(`Error re-indexing course ${course.title}:`, error);
-      }
-    }
-    
-    console.log('Finished re-indexing all courses');
-    return true;
-  } catch (error) {
-    console.error('Error in reindexAllCourses:', error);
-    return false;
-  }
-}
-
 module.exports = {
   initializeSearchService,
   indexCourse,
@@ -856,6 +833,5 @@ module.exports = {
   getPopularCourses,
   getPopularSearches,
   recordSearchQuery,
-  checkElasticsearchConnection,
-  reindexAllCourses
+  checkElasticsearchConnection
 }; 

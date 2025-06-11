@@ -6,11 +6,6 @@ import { MessageSquare, Send, X } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AuthContext } from "@/context/auth-context";
 import { sendChatMessageService } from "@/services";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 function Chatbot({
   courseId,
@@ -94,20 +89,13 @@ function Chatbot({
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {!isOpen ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              className="rounded-full w-16 h-16 shadow-lg hover:scale-105 transition-transform"
-              onClick={toggleChatbot}
-              size="icon"
-            >
-              <MessageSquare className="h-8 w-8" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">
-            <p>Chat with E-Siksha Bot</p>
-          </TooltipContent>
-        </Tooltip>
+        <Button
+          className="rounded-full w-12 h-12 shadow-lg"
+          onClick={toggleChatbot}
+          size="icon"
+        >
+          <MessageSquare className="h-6 w-6" />
+        </Button>
       ) : (
         <Card className="w-96 h-[500px] flex flex-col shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between p-3 border-b">

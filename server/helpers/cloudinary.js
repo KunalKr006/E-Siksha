@@ -1,5 +1,4 @@
 const cloudinary = require("cloudinary").v2;
-const fs = require("fs");
 
 // Validate Cloudinary configuration
 const validateCloudinaryConfig = () => {
@@ -35,22 +34,10 @@ const uploadMediaToCloudinary = async (filePath) => {
       throw new Error("No file path provided");
     }
 
-    // Check file size before uploading
-    const stats = fs.statSync(filePath);
-    const fileSizeInMB = stats.size / (1024 * 1024);
-    
-    if (fileSizeInMB > 100) {
-      throw new Error(`File size (${Math.round(fileSizeInMB)}MB) exceeds Cloudinary's 100MB limit. Please compress your video or split it into smaller segments.`);
-    }
-
     const result = await cloudinary.uploader.upload(filePath, {
       resource_type: "auto",
       chunk_size: 6000000, // 6MB chunks for better upload performance
-      timeout: 120000, // 120 second timeout for larger files
-      eager: [
-        { format: "mp4", quality: "auto" } // Automatically optimize video quality
-      ],
-      eager_async: true
+      timeout: 60000, // 60 second timeout
     });
 
     if (!result || !result.secure_url) {
@@ -64,11 +51,11 @@ const uploadMediaToCloudinary = async (filePath) => {
     if (error.http_code === 401) {
       throw new Error("Invalid Cloudinary credentials");
     } else if (error.http_code === 413) {
-      throw new Error("File size exceeds Cloudinary's 100MB limit. Please compress your video or split it into smaller segments.");
+      throw new Error("File too large for Cloudinary");
     } else if (error.http_code === 429) {
-      throw new Error("Cloudinary rate limit exceeded. Please try again in a few minutes.");
+      throw new Error("Cloudinary rate limit exceeded");
     } else {
-      throw new Error(`Error uploading to Cloudinary: ${error.message}`);
+      throw new Error("Error uploading to cloudinary");
     }
   }
 };

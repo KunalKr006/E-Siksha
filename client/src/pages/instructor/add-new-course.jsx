@@ -43,16 +43,13 @@ function AddNewCoursePage() {
   }
 
   function validateFormData() {
-    console.log("Validating form data:");
-    console.log("Course Landing Form Data:", courseLandingFormData);
-    console.log("Course Curriculum Form Data:", courseCurriculumFormData);
-
     for (const key in courseLandingFormData) {
       if (isEmpty(courseLandingFormData[key])) {
-        console.log(`Empty field in courseLandingFormData: ${key}`);
         return false;
       }
     }
+
+    let hasFreePreview = false;
 
     for (const item of courseCurriculumFormData) {
       if (
@@ -60,13 +57,15 @@ function AddNewCoursePage() {
         isEmpty(item.videoUrl) ||
         isEmpty(item.public_id)
       ) {
-        console.log("Empty field in courseCurriculumFormData:", item);
         return false;
+      }
+
+      if (item.freePreview) {
+        hasFreePreview = true; //found at least one free preview
       }
     }
 
-    console.log("Form validation passed!");
-    return true;
+    return hasFreePreview;
   }
 
   async function handleCreateCourse() {
