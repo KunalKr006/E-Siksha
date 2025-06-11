@@ -22,59 +22,6 @@ import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "@/api/axiosInstance";
 
-// Helper function to safely get transcription text
-const getTranscriptionText = (transcription) => {
-  if (!transcription) return null;
-  if (typeof transcription === 'string') return transcription;
-  if (typeof transcription === 'object' && transcription.segments) {
-    // If it's an object with segments, try to extract text from segments
-    return transcription.segments
-      .map(segment => segment.text)
-      .filter(Boolean)
-      .join(' ');
-  }
-  return null;
-};
-
-// Load Razorpay script with retry and fallback
-const loadRazorpayScript = (retries = 3) => {
-  return new Promise((resolve) => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    
-    // Add error handling for script loading
-    script.onerror = () => {
-      if (retries > 0) {
-        // Retry loading the script
-        setTimeout(() => {
-          document.body.removeChild(script);
-          loadRazorpayScript(retries - 1).then(resolve);
-        }, 1000);
-      } else {
-        // If all retries fail, try alternative CDN
-        const fallbackScript = document.createElement("script");
-        fallbackScript.src = "https://cdn.razorpay.com/checkout.js";
-        fallbackScript.async = true;
-        fallbackScript.onload = () => resolve(true);
-        fallbackScript.onerror = () => resolve(false);
-        document.body.appendChild(fallbackScript);
-      }
-    };
-
-    script.onload = () => {
-      // Check if Razorpay is actually available
-      if (window.Razorpay) {
-        resolve(true);
-      } else {
-        script.onerror();
-      }
-    };
-
-    document.body.appendChild(script);
-  });
-};
-
 function StudentViewCourseDetailsPage() {
   const {
     studentViewCourseDetails,
@@ -86,14 +33,9 @@ function StudentViewCourseDetailsPage() {
   } = useContext(StudentContext);
 
   const { auth } = useContext(AuthContext);
-
-  const [displayCurrentVideoFreePreview, setDisplayCurrentVideoFreePreview] =
-    useState(null);
-  const [showFreePreviewDialog, setShowFreePreviewDialog] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const [paymentError, setPaymentError] = useState(null);
 
   async function fetchStudentViewCourseDetails() {
     const checkCoursePurchaseInfoResponse =
@@ -117,110 +59,38 @@ function StudentViewCourseDetailsPage() {
     if (response?.success) {
       setStudentViewCourseDetails(response?.data);
       setLoadingState(false);
-      console.log('Fetched course details:', response?.data);
     } else {
       setStudentViewCourseDetails(null);
       setLoadingState(false);
     }
   }
 
-  function handleSetFreePreview(getCurrentVideoInfo) {
-    if (getCurrentVideoInfo?.freePreview) {
-      setDisplayCurrentVideoFreePreview(getCurrentVideoInfo?.videoUrl);
-    }
-  }
-
   async function handleCreatePayment() {
+    const paymentPayload = {
+      userId: auth?.user?._id,
+      userName: auth?.user?.userName,
+      userEmail: auth?.user?.userEmail,
+      orderStatus: "confirmed",
+      paymentMethod: "free",
+      paymentStatus: "paid",
+      orderDate: new Date(),
+      instructorId: studentViewCourseDetails?.instructorId,
+      instructorName: studentViewCourseDetails?.instructorName,
+      courseImage: studentViewCourseDetails?.image,
+      courseTitle: studentViewCourseDetails?.title,
+      courseId: studentViewCourseDetails?._id,
+      coursePricing: studentViewCourseDetails?.pricing,
+    };
+
     try {
-      setPaymentError(null);
-      
-      // Load Razorpay script
-      const res = await loadRazorpayScript();
-      if (!res) {
-        setPaymentError("Payment system is currently unavailable. Please try again later or contact support.");
-        return;
-      }
-
-      const paymentPayload = {
-        userId: auth?.user?._id,
-        userName: auth?.user?.userName,
-        userEmail: auth?.user?.userEmail,
-        instructorId: studentViewCourseDetails?.instructorId,
-        instructorName: studentViewCourseDetails?.instructorName,
-        courseImage: studentViewCourseDetails?.image,
-        courseTitle: studentViewCourseDetails?.title,
-        courseId: studentViewCourseDetails?._id,
-        coursePricing: studentViewCourseDetails?.pricing,
-      };
-
       const response = await createPaymentService(paymentPayload);
-      
-      if (response?.success) {
-        const { razorpayOrderId, amount, currency, orderId } = response.data;
-
-        const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          amount: amount,
-          currency: currency,
-          name: "E-Siksha",
-          description: `Purchase ${studentViewCourseDetails?.title}`,
-          order_id: razorpayOrderId,
-          handler: async function (response) {
-            try {
-              const captureResponse = await axiosInstance.post("/student/order/capture", {
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                orderId: orderId,
-              });
-
-              if (captureResponse.data.success) {
-                navigate("/student-courses");
-              } else {
-                setPaymentError("Payment verification failed. Please contact support.");
-              }
-            } catch (error) {
-              console.error("Payment verification error:", error);
-              setPaymentError("Payment verification failed. Please contact support.");
-            }
-          },
-          prefill: {
-            name: auth?.user?.userName,
-            email: auth?.user?.userEmail,
-          },
-          theme: {
-            color: "#2563eb",
-          },
-          modal: {
-            ondismiss: function() {
-              setPaymentError(null);
-            },
-            escape: true,
-            backdropclose: true
-          },
-          // Disable analytics and tracking
-          analytics: {
-            enabled: false
-          }
-        };
-
-        try {
-          const razorpay = new window.Razorpay(options);
-          razorpay.open();
-        } catch (error) {
-          console.error("Razorpay initialization error:", error);
-          setPaymentError("Failed to initialize payment. Please try again or contact support.");
-        }
+      if (response.success) {
+        navigate('/student-courses');
       }
     } catch (error) {
       console.error("Error in course purchase:", error);
-      setPaymentError("Failed to initiate payment. Please try again or contact support.");
     }
   }
-
-  useEffect(() => {
-    if (displayCurrentVideoFreePreview !== null) setShowFreePreviewDialog(true);
-  }, [displayCurrentVideoFreePreview]);
 
   useEffect(() => {
     if (currentCourseDetailsId !== null) fetchStudentViewCourseDetails();
@@ -238,13 +108,6 @@ function StudentViewCourseDetailsPage() {
   }, [location.pathname]);
 
   if (loadingState) return <Skeleton />;
-
-  const getIndexOfFreePreviewUrl =
-    studentViewCourseDetails !== null
-      ? studentViewCourseDetails?.curriculum?.findIndex(
-          (item) => item.freePreview
-        )
-      : -1;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -286,36 +149,19 @@ function StudentViewCourseDetailsPage() {
       </div>
 
       {/* Main Content and Sidebar */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Main Content */}
-        <main className="flex-grow lg:max-w-[calc(100%-520px)]">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>What you'll learn</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {studentViewCourseDetails?.objectives
-                  .split(",")
-                  .map((objective, index) => (
-                    <li key={index} className="flex items-start">
-                      <CheckCircle className="mr-2 h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm md:text-base">{objective}</span>
-                    </li>
-                  ))}
-              </ul>
-            </CardContent>
-          </Card>
-
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr,500px] gap-6">
+        <main>
+          {/* Course Description */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Course Description</CardTitle>
             </CardHeader>
-            <CardContent className="text-sm md:text-base whitespace-pre-wrap">
-              {studentViewCourseDetails?.description}
+            <CardContent>
+              <p className="whitespace-pre-wrap">{studentViewCourseDetails?.description}</p>
             </CardContent>
           </Card>
 
+          {/* Course Curriculum */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Course Curriculum</CardTitle>
@@ -359,70 +205,13 @@ function StudentViewCourseDetailsPage() {
                   ₹{studentViewCourseDetails?.pricing}
                 </span>
               </div>
-              <Button 
-                onClick={handleCreatePayment} 
-                className="w-full"
-                disabled={!!paymentError}
-              >
+              <Button onClick={handleCreatePayment} className="w-full">
                 Buy Now
               </Button>
-              {paymentError && (
-                <p className="mt-2 text-sm text-red-500 text-center">
-                  {paymentError}
-                </p>
-              )}
             </CardContent>
           </Card>
         </aside>
       </div>
-
-      {/* Preview Dialog */}
-      <Dialog
-        open={showFreePreviewDialog}
-        onOpenChange={() => {
-          setShowFreePreviewDialog(false);
-          setDisplayCurrentVideoFreePreview(null);
-        }}
-      >
-        <DialogContent className="w-[95vw] max-w-[800px] p-4 md:p-6">
-          <DialogHeader>
-            <DialogTitle>Course Preview</DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              This is a preview lecture. Purchase the course to access all content.
-            </p>
-          </DialogHeader>
-          <div className="aspect-video rounded-lg overflow-hidden mb-4">
-            <VideoPlayer
-              url={displayCurrentVideoFreePreview}
-              width="100%"
-              height="100%"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            {studentViewCourseDetails?.curriculum
-              ?.filter((item) => item.freePreview)
-              .map((filteredItem, index) => (
-                <p
-                  key={index}
-                  onClick={() => handleSetFreePreview(filteredItem)}
-                  className="cursor-pointer text-sm md:text-base font-medium p-2 hover:bg-muted/50 rounded-md transition-colors"
-                >
-                  {filteredItem?.title}
-                </p>
-              ))}
-          </div>
-          <DialogFooter className="sm:justify-between mt-4">
-            <Button onClick={handleCreatePayment} className="flex-1">
-              Buy Full Course
-            </Button>
-            <DialogClose asChild>
-              <Button type="button" variant="secondary">
-                Close
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

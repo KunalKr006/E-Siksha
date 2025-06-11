@@ -180,7 +180,6 @@ export const courseCurriculumInitialFormData = [
   {
     title: "",
     videoUrl: "",
-    freePreview: false,
     public_id: "",
   },
 ];

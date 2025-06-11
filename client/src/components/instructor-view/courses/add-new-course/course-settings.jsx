@@ -14,14 +14,23 @@ function CourseSettings() {
     setMediaUploadProgress,
     mediaUploadProgressPercentage,
     setMediaUploadProgressPercentage,
+    currentEditedCourseId,
   } = useContext(InstructorContext);
 
   async function handleImageUploadChange(event) {
     const selectedImage = event.target.files[0];
 
     if (selectedImage) {
+      const fileSizeInMB = selectedImage.size / (1024 * 1024);
+      if (fileSizeInMB > 500) {
+        alert(`File size (${Math.round(fileSizeInMB)}MB) exceeds the 500MB limit. Please use a smaller image.`);
+        return;
+      }
+
       const imageFormData = new FormData();
       imageFormData.append("file", selectedImage);
+      imageFormData.append("courseId", currentEditedCourseId || "new");
+      imageFormData.append("lectureId", "course-image");
 
       try {
         setMediaUploadProgress(true);
@@ -36,8 +45,11 @@ function CourseSettings() {
           });
           setMediaUploadProgress(false);
         }
-      } catch (e) {
-        console.log(e);
+      } catch (error) {
+        console.error("Upload error:", error);
+        setMediaUploadProgress(false);
+        const errorMessage = error.response?.data?.message || error.message;
+        alert(errorMessage || "Failed to upload image. Please try again.");
       }
     }
   }
