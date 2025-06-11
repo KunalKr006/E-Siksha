@@ -1,6 +1,7 @@
 const Course = require("../../models/Course");
 const User = require("../../models/User");
 const Order = require("../../models/Order");
+const { indexCourse } = require("../../services/search-service");
 
 const addNewCourse = async (req, res) => {
   try {
@@ -9,6 +10,15 @@ const addNewCourse = async (req, res) => {
     const saveCourse = await newlyCreatedCourse.save();
 
     if (saveCourse) {
+      // Index the course in Elasticsearch
+      try {
+        await indexCourse(saveCourse);
+        console.log('Course indexed in Elasticsearch successfully');
+      } catch (indexError) {
+        console.error('Error indexing course in Elasticsearch:', indexError);
+        // Continue with the response even if indexing fails
+      }
+
       res.status(201).json({
         success: true,
         message: "Course saved successfully",
@@ -143,6 +153,15 @@ const updateCourseByID = async (req, res) => {
         success: false,
         message: "Course not found!",
       });
+    }
+
+    // Re-index the course in Elasticsearch
+    try {
+      await indexCourse(updatedCourse);
+      console.log('Updated course re-indexed in Elasticsearch successfully');
+    } catch (indexError) {
+      console.error('Error re-indexing course in Elasticsearch:', indexError);
+      // Continue with the response even if indexing fails
     }
 
     res.status(200).json({

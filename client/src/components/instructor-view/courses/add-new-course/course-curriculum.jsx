@@ -23,6 +23,7 @@ function CourseCurriculum() {
     setMediaUploadProgress,
     mediaUploadProgressPercentage,
     setMediaUploadProgressPercentage,
+    currentEditedCourseId,
   } = useContext(InstructorContext);
 
   const bulkUploadInputRef = useRef(null);
@@ -31,7 +32,9 @@ function CourseCurriculum() {
     setCourseCurriculumFormData([
       ...courseCurriculumFormData,
       {
-        ...courseCurriculumInitialFormData[0],
+        title: "",
+        videoUrl: "",
+        public_id: "",
       },
     ]);
   }
@@ -46,22 +49,21 @@ function CourseCurriculum() {
     setCourseCurriculumFormData(cpyCourseCurriculumFormData);
   }
 
-  function handleFreePreviewChange(currentValue, currentIndex) {
-    let cpyCourseCurriculumFormData = [...courseCurriculumFormData];
-    cpyCourseCurriculumFormData[currentIndex] = {
-      ...cpyCourseCurriculumFormData[currentIndex],
-      freePreview: currentValue,
-    };
-
-    setCourseCurriculumFormData(cpyCourseCurriculumFormData);
-  }
-
   async function handleSingleLectureUpload(event, currentIndex) {
     const selectedFile = event.target.files[0];
 
     if (selectedFile) {
+      // Check file size before uploading
+      const fileSizeInMB = selectedFile.size / (1024 * 1024);
+      if (fileSizeInMB > 500) {
+        alert(`File size (${Math.round(fileSizeInMB)}MB) exceeds the 500MB limit. Please compress your video or split it into smaller segments.`);
+        return;
+      }
+
       const videoFormData = new FormData();
       videoFormData.append("file", selectedFile);
+      videoFormData.append("courseId", currentEditedCourseId || "new");
+      videoFormData.append("lectureId", currentIndex.toString());
 
       try {
         setMediaUploadProgress(true);
@@ -80,7 +82,10 @@ function CourseCurriculum() {
           setMediaUploadProgress(false);
         }
       } catch (error) {
-        console.log(error);
+        console.error("Upload error:", error);
+        setMediaUploadProgress(false);
+        const errorMessage = error.response?.data?.message || error.message;
+        alert(errorMessage || "Failed to upload video. Please try again.");
       }
     }
   }
@@ -178,7 +183,6 @@ function CourseCurriculum() {
             title: `Lecture ${
               cpyCourseCurriculumFormdata.length + (index + 1)
             }`,
-            freePreview: false,
           })),
         ];
         setCourseCurriculumFormData(cpyCourseCurriculumFormdata);
@@ -277,18 +281,6 @@ function CourseCurriculum() {
                   onChange={(event) => handleCourseTitleChange(event, index)}
                   value={courseCurriculumFormData[index]?.title}
                 />
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    onCheckedChange={(value) =>
-                      handleFreePreviewChange(value, index)
-                    }
-                    checked={courseCurriculumFormData[index]?.freePreview}
-                    id={`freePreview-${index + 1}`}
-                  />
-                  <Label htmlFor={`freePreview-${index + 1}`}>
-                    Free Preview
-                  </Label>
-                </div>
               </div>
               <div className="mt-6">
                 {courseCurriculumFormData[index]?.videoUrl ? (
