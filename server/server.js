@@ -19,14 +19,13 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 const clientUrl=process.env.CLIENT_URL;
 
-// Removed: Import WebSocket library
-// const WebSocket = require('ws');
+
 
 
 app.use(
   cors({
-    //origin: "https://e-siksha-co.onrender.com",
-    origin: clientUrl,
+    origin: "https://e-siksha-co.onrender.com",
+    //origin: clientUrl,
     methods: ["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
